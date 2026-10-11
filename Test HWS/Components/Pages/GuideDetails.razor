@@ -1,0 +1,81 @@
+﻿@page "/guides/{Id:int}"
+
+<PageTitle>Détail du guide</PageTitle>
+
+<a href="/" class="btn btn-outline-secondary mb-3">
+    Retour aux guides
+</a>
+
+@if (guide is null)
+{
+    <div class="alert alert-warning">
+        Ce guide est introuvable.
+    </div>
+}
+else
+{
+    <h1>@guide.Title</h1>
+    <p>@guide.Description</p>
+    <p><strong>Durée :</strong> @guide.NumberOfDays jours</p>
+
+    @for (var day = 1; day <= guide.NumberOfDays; day++)
+    {
+        var currentDay = day;
+
+        <section class="mb-4">
+            <h2 class="h4">Jour @currentDay</h2>
+
+            @foreach (var activity in activities
+                .Where(a => a.GuideId == Id && a.Day == currentDay)
+                .OrderBy(a => a.VisitOrder))
+            {
+                <article class="card mb-2">
+                    <div class="card-body">
+                        <h3 class="h5">@activity.Title</h3>
+                        <p class="mb-0">@activity.Description</p>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private GuidePreview? guide;
+
+    protected override void OnParametersSet()
+    {
+        guide = Id switch
+        {
+            1 => new("Week-end à Paris",
+                "Musées, promenades et découvertes au cœur de Paris.", 2),
+            2 => new("Les châteaux de la Loire",
+                "Trois jours pour découvrir les châteaux et leurs jardins.", 3),
+            3 => new("Découverte de Lyon",
+                "Une escapade entre patrimoine et gastronomie.", 2),
+            _ => null
+        };
+    }
+
+    private readonly List<ActivityPreview> activities =
+    [
+        new(1, 1, 1, "Musée du Louvre", "Découverte des collections du musée."),
+        new(1, 1, 2, "Jardin des Tuileries", "Promenade dans les jardins."),
+        new(1, 2, 1, "Montmartre", "Balade dans le quartier de Montmartre."),
+        new(2, 1, 1, "Château de Chambord", "Visite du château et du domaine."),
+        new(2, 2, 1, "Château de Chenonceau", "Découverte du château et des jardins."),
+        new(2, 3, 1, "Château d’Amboise", "Visite du château royal."),
+        new(3, 1, 1, "Vieux Lyon", "Découverte du quartier historique."),
+        new(3, 2, 1, "Parc de la Tête d’Or", "Promenade dans le parc.")
+    ];
+
+    private record GuidePreview(
+        string Title, string Description, int NumberOfDays);
+
+    private record ActivityPreview(
+        int GuideId, int Day, int VisitOrder,
+        string Title, string Description);
+}

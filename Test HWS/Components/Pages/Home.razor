@@ -1,7 +1,48 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Guides de voyage</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Guides de voyage</h1>
+<p>Découvrez les itinéraires et activités de votre prochain voyage.</p>
 
-Welcome to your new app.
+<div class="row g-3">
+    @foreach (var guide in guides)
+    {
+        <div class="col-12 col-md-6 col-lg-4">
+            <article class="card h-100">
+                <div class="card-body">
+                    <h2 class="h5 card-title">@guide.Title</h2>
+                    <p class="card-text">@guide.Description</p>
+                    <span class="badge bg-primary">
+                        @guide.NumberOfDays jours
+                    </span>
+
+                    <div class="mt-3">
+                        <a class="btn btn-outline-primary"
+                           href="@($"/guides/{guide.Id}")">
+                            Voir le guide
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<GuidePreview> guides =
+    [
+        new(1, "Week-end à Paris",
+            "Musées, promenades et découvertes au cœur de Paris.", 2),
+        new(2, "Les châteaux de la Loire",
+            "Trois jours pour découvrir les châteaux et leurs jardins.", 3),
+        new(3, "Découverte de Lyon",
+            "Une escapade entre patrimoine et gastronomie.", 2)
+    ];
+
+    private record GuidePreview(
+        int Id,
+        string Title,
+        string Description,
+        int NumberOfDays);
+}
