@@ -18,6 +18,17 @@ else
     <p>@guide.Description</p>
     <p><strong>Durée :</strong> @guide.NumberOfDays jours</p>
 
+    <dl class="row">
+        <dt class="col-sm-3">Mobilité</dt>
+        <dd class="col-sm-9">@guide.Mobility</dd>
+
+        <dt class="col-sm-3">Saison</dt>
+        <dd class="col-sm-9">@guide.Season</dd>
+
+        <dt class="col-sm-3">Public</dt>
+        <dd class="col-sm-9">@guide.Audience</dd>
+    </dl>
+
     @for (var day = 1; day <= guide.NumberOfDays; day++)
     {
         var currentDay = day;
@@ -32,7 +43,36 @@ else
                 <article class="card mb-2">
                     <div class="card-body">
                         <h3 class="h5">@activity.Title</h3>
-                        <p class="mb-0">@activity.Description</p>
+                        <p>@activity.Description</p>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Catégorie</dt>
+                            <dd class="col-sm-9">@activity.Category</dd>
+
+                            <dt class="col-sm-3">Adresse</dt>
+                            <dd class="col-sm-9">@activity.Address</dd>
+
+                            <dt class="col-sm-3">Téléphone</dt>
+                            <dd class="col-sm-9">@activity.Phone</dd>
+
+                            <dt class="col-sm-3">Horaires</dt>
+                            <dd class="col-sm-9">@activity.OpeningHours</dd>
+
+                            <dt class="col-sm-3">Site internet</dt>
+                            <dd class="col-sm-9">
+                                @if (!string.IsNullOrWhiteSpace(activity.Website))
+                                {
+                                    <a href="@activity.Website"
+                                       target="_blank"
+                                       rel="noopener noreferrer">
+                                        Consulter le site
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span>Non renseigné</span>
+                                }
+                            </dd>
+                        </dl>
                     </div>
                 </article>
             }
@@ -50,19 +90,44 @@ else
     {
         guide = Id switch
         {
-            1 => new("Week-end à Paris",
-                "Musées, promenades et découvertes au cœur de Paris.", 2),
-            2 => new("Les châteaux de la Loire",
-                "Trois jours pour découvrir les châteaux et leurs jardins.", 3),
-            3 => new("Découverte de Lyon",
-                "Une escapade entre patrimoine et gastronomie.", 2),
+            1 => new(
+                "Week-end à Paris",
+                "Musées, promenades et découvertes au cœur de Paris.",
+                2,
+                "À pied",
+                "Printemps",
+                "Entre amis"),
+
+            2 => new(
+                "Les châteaux de la Loire",
+                "Trois jours pour découvrir les châteaux et leurs jardins.",
+                3,
+                "Voiture",
+                "Été",
+                "Famille"),
+
+            3 => new(
+                "Découverte de Lyon",
+                "Une escapade entre patrimoine et gastronomie.",
+                2,
+                "À pied",
+                "Automne",
+                "En groupe"),
+
             _ => null
         };
     }
 
     private readonly List<ActivityPreview> activities =
     [
-        new(1, 1, 1, "Musée du Louvre", "Découverte des collections du musée."),
+        new(1, 1, 1,
+            "Musée du Louvre",
+            "Découverte des collections du musée.",
+            Category: "musée",
+            Address: "Adresse de démonstration",
+            Phone: "Non renseigné",
+            OpeningHours: "Horaires de démonstration",
+            Website: "https://www.louvre.fr"),
         new(1, 1, 2, "Jardin des Tuileries", "Promenade dans les jardins."),
         new(1, 2, 1, "Montmartre", "Balade dans le quartier de Montmartre."),
         new(2, 1, 1, "Château de Chambord", "Visite du château et du domaine."),
@@ -73,9 +138,22 @@ else
     ];
 
     private record GuidePreview(
-        string Title, string Description, int NumberOfDays);
+        string Title,
+        string Description,
+        int NumberOfDays,
+        string Mobility,
+        string Season,
+        string Audience);
 
     private record ActivityPreview(
-        int GuideId, int Day, int VisitOrder,
-        string Title, string Description);
+        int GuideId,
+        int Day,
+        int VisitOrder,
+        string Title,
+        string Description,
+        string Category = "activité",
+        string Address = "Non renseignée",
+        string Phone = "Non renseigné",
+        string OpeningHours = "Non renseignés",
+        string Website = "");
 }

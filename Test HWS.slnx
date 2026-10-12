@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Test HWS/Test HWS.csproj" />
+  <Project Path="TravelGuides.Api/TravelGuides.Api.csproj" Id="e9d6d55e-e5f0-4616-b522-f45bc663fbb6" />
 </Solution>
