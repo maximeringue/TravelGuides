@@ -1,6 +1,36 @@
-@TravelGuides.Api_HostAddress = http://localhost:5022
+@api = https://localhost:7164
+@token = en4/wEKksUigt5Dtv3zVw8N/JB0e9JNbhf77hsId414=
 
-GET {{TravelGuides.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Connexion admin
+POST {{api}}/api/auth/login
+Content-Type: application/json
 
-###
+{
+  "email": "admin@example.com",
+  "password": "DemoAdmin123!"
+}
+
+### Connexion utilisateur
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "DemoUser123!"
+}
+
+### Mot de passe incorrect
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "MauvaisMotDePasse!"
+}
+
+### Compte connecté
+GET {{api}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Appel sans connexion
+GET {{api}}/api/auth/me

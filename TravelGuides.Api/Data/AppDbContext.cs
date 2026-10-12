@@ -149,5 +149,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 Category = "château"
             }
         );
+
+        DemoGuideData.Configure(modelBuilder);
     }
 }

@@ -1,12 +1,31 @@
 ﻿@page "/guides/{Id:int}"
+@using System.Net
+@using System.Net.Http.Json
+@using System.Text.Json
+@using Test_HWS.ViewModels
+@inject IHttpClientFactory ClientFactory
 
-<PageTitle>Détail du guide</PageTitle>
+<PageTitle>@(guide?.Title ?? "Détail du guide")</PageTitle>
 
 <a href="/" class="btn btn-outline-secondary mb-3">
     Retour aux guides
 </a>
 
-@if (guide is null)
+@if (isLoading)
+{
+    <p role="status">Chargement du guide…</p>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+
+    <button class="btn btn-primary" @onclick="LoadGuideAsync">
+        Réessayer
+    </button>
+}
+else if (guide is null)
 {
     <div class="alert alert-warning">
         Ce guide est introuvable.
@@ -16,9 +35,11 @@ else
 {
     <h1>@guide.Title</h1>
     <p>@guide.Description</p>
-    <p><strong>Durée :</strong> @guide.NumberOfDays jours</p>
 
     <dl class="row">
+        <dt class="col-sm-3">Durée</dt>
+        <dd class="col-sm-9">@guide.NumberOfDays jours</dd>
+
         <dt class="col-sm-3">Mobilité</dt>
         <dd class="col-sm-9">@guide.Mobility</dd>
 
@@ -33,33 +54,42 @@ else
     {
         var currentDay = day;
 
+        var dayActivities = guide.Activities
+            .Where(a => a.Day == currentDay)
+            .OrderBy(a => a.VisitOrder)
+            .ToList();
+
         <section class="mb-4">
             <h2 class="h4">Jour @currentDay</h2>
 
-            @foreach (var activity in activities
-                .Where(a => a.GuideId == Id && a.Day == currentDay)
-                .OrderBy(a => a.VisitOrder))
+            @if (dayActivities.Count == 0)
             {
-                <article class="card mb-2">
+                <p>Aucune activité prévue pour ce jour.</p>
+            }
+
+            @foreach (var activity in dayActivities)
+            {
+                <article class="card mb-3">
                     <div class="card-body">
                         <h3 class="h5">@activity.Title</h3>
                         <p>@activity.Description</p>
+
                         <dl class="row mb-0">
                             <dt class="col-sm-3">Catégorie</dt>
-                            <dd class="col-sm-9">@activity.Category</dd>
+                            <dd class="col-sm-9">@Display(activity.Category)</dd>
 
                             <dt class="col-sm-3">Adresse</dt>
-                            <dd class="col-sm-9">@activity.Address</dd>
+                            <dd class="col-sm-9">@Display(activity.Address)</dd>
 
                             <dt class="col-sm-3">Téléphone</dt>
-                            <dd class="col-sm-9">@activity.Phone</dd>
+                            <dd class="col-sm-9">@Display(activity.Phone)</dd>
 
                             <dt class="col-sm-3">Horaires</dt>
-                            <dd class="col-sm-9">@activity.OpeningHours</dd>
+                            <dd class="col-sm-9">@Display(activity.OpeningHours)</dd>
 
                             <dt class="col-sm-3">Site internet</dt>
                             <dd class="col-sm-9">
-                                @if (!string.IsNullOrWhiteSpace(activity.Website))
+                                @if (IsWebsiteValid(activity.Website))
                                 {
                                     <a href="@activity.Website"
                                        target="_blank"
@@ -84,76 +114,65 @@ else
     [Parameter]
     public int Id { get; set; }
 
-    private GuidePreview? guide;
+    private GuideDetailsViewModel? guide;
+    private bool isLoading = true;
+    private string? errorMessage;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        guide = Id switch
-        {
-            1 => new(
-                "Week-end à Paris",
-                "Musées, promenades et découvertes au cœur de Paris.",
-                2,
-                "À pied",
-                "Printemps",
-                "Entre amis"),
-
-            2 => new(
-                "Les châteaux de la Loire",
-                "Trois jours pour découvrir les châteaux et leurs jardins.",
-                3,
-                "Voiture",
-                "Été",
-                "Famille"),
-
-            3 => new(
-                "Découverte de Lyon",
-                "Une escapade entre patrimoine et gastronomie.",
-                2,
-                "À pied",
-                "Automne",
-                "En groupe"),
-
-            _ => null
-        };
+        await LoadGuideAsync();
     }
 
-    private readonly List<ActivityPreview> activities =
-    [
-        new(1, 1, 1,
-            "Musée du Louvre",
-            "Découverte des collections du musée.",
-            Category: "musée",
-            Address: "Adresse de démonstration",
-            Phone: "Non renseigné",
-            OpeningHours: "Horaires de démonstration",
-            Website: "https://www.louvre.fr"),
-        new(1, 1, 2, "Jardin des Tuileries", "Promenade dans les jardins."),
-        new(1, 2, 1, "Montmartre", "Balade dans le quartier de Montmartre."),
-        new(2, 1, 1, "Château de Chambord", "Visite du château et du domaine."),
-        new(2, 2, 1, "Château de Chenonceau", "Découverte du château et des jardins."),
-        new(2, 3, 1, "Château d’Amboise", "Visite du château royal."),
-        new(3, 1, 1, "Vieux Lyon", "Découverte du quartier historique."),
-        new(3, 2, 1, "Parc de la Tête d’Or", "Promenade dans le parc.")
-    ];
+    private async Task LoadGuideAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        guide = null;
 
-    private record GuidePreview(
-        string Title,
-        string Description,
-        int NumberOfDays,
-        string Mobility,
-        string Season,
-        string Audience);
+        try
+        {
+            using var client = ClientFactory.CreateClient("TravelGuidesApi");
+            using var response = await client.GetAsync($"api/guides/{Id}");
 
-    private record ActivityPreview(
-        int GuideId,
-        int Day,
-        int VisitOrder,
-        string Title,
-        string Description,
-        string Category = "activité",
-        string Address = "Non renseignée",
-        string Phone = "Non renseigné",
-        string OpeningHours = "Non renseignés",
-        string Website = "");
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return;
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            guide = await response.Content
+                .ReadFromJsonAsync<GuideDetailsViewModel>();
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Impossible de charger ce guide. Vérifiez que l’API est démarrée.";
+        }
+        catch (TaskCanceledException)
+        {
+            errorMessage = "L’API met trop de temps à répondre.";
+        }
+        catch (JsonException)
+        {
+            errorMessage = "La réponse de l’API n’a pas le format attendu.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static string Display(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "Non renseigné"
+            : value;
+    }
+
+    private static bool IsWebsiteValid(string? value)
+    {
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttps
+                || uri.Scheme == Uri.UriSchemeHttp);
+    }
 }
